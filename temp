@@ -1,0 +1,132 @@
+from math import log
+
+
+def NOD(a, b):
+    while a and b:
+        a, b = sorted([a, b], reverse=True)
+        a %= b
+    return a + b
+
+
+def NOK(x, y):
+    return x * y // NOD(x, y)
+
+
+def N_s(x):
+    j = set()
+    s = 2
+    while x != 1:
+        for i in range(s, x):
+            if x % i == 0:
+                j.add(i)
+                x //= i
+                s = i
+    return j
+
+
+def ege_27(file):
+    file1 = open(file)
+    r = file1.readlines()[1:]
+    sl = dict()
+    print('p:', len(r))
+    n = 0
+
+    for i in r:
+        i = int(i.strip())
+        x = 0
+        n = i
+        while n % 3 == 0:
+            x += 1
+            n //= 3
+        sl[x] = [*sl.get(x, [0, 0, 0, 0])[0:i % 4],
+                 sl.get(x, [0, 0, 0, 0])[i % 4] + 1,
+                 *sl.get(x, [0, 0, 0, 0])[i % 4 + 1:]]
+        n += 1
+
+    k = 0
+    x = int(log(6561, 3))
+    print(x, sl)
+    print('p:', len(r))
+
+    for i in sorted(list(sl.keys()), reverse=True):
+        k += sl[i][0] * (sum(map(lambda v: sl[v][0] if v in sl.keys() else 0, range(x - i, i + 1))))
+        k += sl[i][1] * sum(map(lambda v: sl[v][3] if v in sl.keys() else 0, range(x - i, i + 1)))
+        k += sl[i][2] * (sum(map(lambda v: sl[v][2] if v in sl.keys() else 0, range(x - i, i + 1))))
+        k += sl[i][3] * sum(map(lambda v: sl[v][1] if v in sl.keys() else 0, range(x - i, i + 1)))
+
+    print(k)
+
+    k = 0
+
+    for i in sorted(list(sl.keys()), reverse=True):
+        k += sl[i][0] * (sum(map(lambda v: sl[v][0] if v in sl.keys() else 0, range(x - i, i + 1))) - 1)
+        k += sl[i][1] * sum(map(lambda v: sl[v][3] if v in sl.keys() else 0, range(x - i, i + 1)))
+        k += sl[i][2] * (sum(map(lambda v: sl[v][2] if v in sl.keys() else 0, range(x - i, i + 1))) - 1)
+        k += sl[i][3] * sum(map(lambda v: sl[v][1] if v in sl.keys() else 0, range(x - i, i + 1)))
+
+    print('p:', k)
+
+
+# ege_27('27-A.txt')
+# ege_27('27-B.txt')
+
+def func(txt, F=False, table=-1):
+    '''
+    txt = '(x -> y) or z'
+    F = True
+    table = ['0001', '0100', '0?01]  # ___r
+    '''
+    txt = txt.replace('<=', '->').replace('==', '=').replace('=', ' == ').replace('->', ' <= ').replace('\/', ' or ')\
+        .replace('/\\', ' and ')
+    txt = txt.replace('->', ' <= ').replace('v', ' or ').replace('^', ' and ')
+    txt = txt.replace('(', ' ( ').replace(')', ' ) ')
+    txt = txt.split(' ')
+    chars = set(txt) - set(txt).intersection({')', '(', 'and', 'or', '<=', '==', '', 'not'})
+    chars = sorted(chars)
+    sym = dict()
+    txt = ' '.join(txt)
+    print(txt)
+
+    for i in range(len(chars)):
+        sym[chars[i]] = [*[0] * 2 ** i, *[1] * 2 ** i] * 2 ** (len(chars) - i - 1)
+
+    if table == -1:
+        for i in range(2 ** (len(chars) - 1)):
+            txt1 = txt
+            for j in sym.keys():
+                txt1 = txt1.replace(j, str(sym[j][i]))
+            if eval(txt1) == F:
+                print(*list(map(lambda x: (x, sym[x][i]), sym.keys())))
+    else:
+        n = 0
+        res = dict()
+        forb = []
+        if type(table) == list:
+            for line in table:
+                F = int(line[-1])
+                arr = []
+                for i in range(2 ** (len(chars) - 1)):
+                    txt1 = txt
+                    for j in sym.keys():
+                        txt1 = txt1.replace(j, str(sym[j][i]))
+                    if eval(txt1) == F and [list(map(lambda x: (x, sym[x][i]), sym.keys()))] not in forb:
+                        arr.append(list(map(lambda x: (x, sym[x][i]), sym.keys())))
+                for i in arr:
+                    if sum(map(lambda x: x[1], i)) > sum(list(map(int, line[:-1].replace('?', '')))) + line.count('?'):
+                        pass
+                    elif sum(map(lambda x: x[1], i)) < sum(list(map(int, line[:-1].replace('?', '')))):
+                        pass
+                    else:
+                        res[line] = res.get(line, []) + [i]
+                if len(res[line]) <= 1:
+                    forb.append(res[line])
+            for i in list(res.keys()):
+                if len(res[i]) > 1:
+                    for j in forb:
+                        if j[0] in res[i]:
+                            res[i].pop(res[i].index(j[0]))
+            print(*res.items(), sep='\n')
+
+
+func('((z -> y) /\\ ((not x) -> w)) -> ((z = w) v (y ^ (not x)))', table=['00?00', '0???0', '1?110'])
+'yxwz'
